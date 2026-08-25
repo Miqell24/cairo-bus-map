@@ -208,9 +208,45 @@ async function init() {
   const nM = meta.lines.filter((l) => l.mode === 'bus' && l.color === MLINE_YELLOW).length;
   document.getElementById('count').textContent = `(${nBus - nM} formal bus · ${nM} paratransit · ${nTram} metro)`;
   document.getElementById('stamp').textContent = new Date(meta.generatedAt).toLocaleDateString('en-GB');
-  document.getElementById('chips').innerHTML = meta.lines
-    .map((l) => `<button class="chip" data-line="${esc(l.line)}" style="background:${esc(l.color)}">${esc(l.line)}</button>`)
-    .join(' ');
+  // The list is grouped by operator class, because the numbers alone no longer
+  // say which is which: microbus codes print as bare digits (the X is a
+  // pipeline key, never a street sign), so "505" exists both as a CTA bus and
+  // as a microbus. Colour separates them on the map, the headings here.
+  // Class comes from the COLOUR first — formal Mwasalat Misr codes like "M10"
+  // or Green Bus "G1" would false-match a prefix test — and only then from the
+  // key's prefix, which is what the pipeline assigned per paratransit agency.
+  const PARA_GROUPS = [
+    ['X', 'Microbus', '14-seater, orange plates'],
+    ['T', 'Tomnaya', '8-seater Suzuki/Chevrolet, blue plates'],
+    ['C', 'Cooperative minibus', '29-seater, grey plates'],
+    ['B', 'Box', 'box paratransit'],
+    ['P', 'Peugeot', 'shared Peugeot'],
+  ];
+  const classOf = (l) => {
+    if (l.mode === 'tram') return 'metro';
+    if (l.color !== MLINE_YELLOW) return 'formal';
+    return PARA_GROUPS.some(([p]) => l.line.startsWith(p)) ? l.line[0] : 'para';
+  };
+  const bucket = new Map();
+  for (const l of meta.lines) {
+    const k = classOf(l);
+    if (!bucket.has(k)) bucket.set(k, []);
+    bucket.get(k).push(l);
+  }
+  const chipHtml = (l) =>
+    `<button class="chip" data-line="${esc(l.line)}" style="background:${esc(l.color)}">${esc(l.label ?? l.line)}</button>`;
+  const section = (key, title, note) => {
+    const ls = bucket.get(key);
+    if (!ls || !ls.length) return '';
+    return `<h3 class="chip-head">${esc(title)} <span class="n">${ls.length}</span>` +
+           (note ? `<span class="note">${esc(note)}</span>` : '') + `</h3>` +
+           `<div class="chip-cloud">${ls.map(chipHtml).join(' ')}</div>`;
+  };
+  document.getElementById('chips').innerHTML =
+    section('formal', 'Formal buses', 'CTA · Mwasalat Misr · Green Bus') +
+    PARA_GROUPS.map(([p, title, note]) => section(p, title, note)).join('') +
+    section('para', 'Other paratransit', '') +
+    section('metro', 'Cairo Metro', '');
 
   // Line layers go below the base style labels (street names stay readable).
   const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
@@ -284,6 +320,15 @@ async function init() {
       ['get', 'lines'], { 'text-color': railColor },
       '\n', {},
       ['get', 'busLines'], { 'text-color': KMK }],
+    // Shared formal/paratransit corridor: the run's own colour is the navy
+    // fallback (colorOf gives mixed sets the mode default), which used to paint
+    // the microbus numbers navy too. Each half now carries its own colour, so
+    // the amber numbers stay amber wherever a microbus shares a bus corridor.
+    ['has', 'mLines'],
+    ['format',
+      ['get', 'nmLines'], { 'text-color': KMK },
+      ', ', {},
+      ['get', 'mLines'], { 'text-color': MLINE_YELLOW }],
     ['format', ['get', 'lines'], {}]];
   map.addSource('labels', { type: 'geojson', data: 'data/labels.geojson' });
   const numbersLayout = {
@@ -578,7 +623,9 @@ async function init() {
       minzoom: z0, maxzoom: z1,
       filter: ['all', bandC(b), ['has', 'line']],
       layout: {
-        'text-field': ['get', 'line'],
+        // `line` stays the selection key; `lbl` is the city's own number where
+        // the key carries a pipeline-only prefix/suffix (microbus X, minibus m)
+        'text-field': ['coalesce', ['get', 'lbl'], ['get', 'line']],
         'text-font': [NARROW_BOLD],
         // × sc: crowded complexes arrive pre-shrunk from the pipeline — the
         // per-feature constant keeps layout and render in agreement (the same
@@ -802,6 +849,12 @@ async function init() {
   let densityMainCond = true; // sparsest step: one main row per same-content corridor chain
   const busOnlyNumbers = ['case', ['has', 'busLines'],
     ['format', ['get', 'busLines'], { 'text-color': KMK }],
+    // same two-colour split as numberField, for the trams-hidden view
+    ['has', 'mLines'],
+    ['format',
+      ['get', 'nmLines'], { 'text-color': KMK },
+      ', ', {},
+      ['get', 'mLines'], { 'text-color': MLINE_YELLOW }],
     ['format', ['get', 'lines'], {}]];
   const tramOnlyNumbers = ['format', ['get', 'lines'], {}];
   function applyFilters() {
@@ -1498,7 +1551,9 @@ async function init() {
         for (let i = 1; i < pm.length; i++) {
           cum.push(cum[i - 1] + Math.hypot(pm[i][0] - pm[i - 1][0], pm[i][1] - pm[i - 1][1]));
         }
-        const rec = { line: p.line, mode: p.mode, color: p.color, headsign: p.headsign, coords, pos: new Map() };
+        // lbl rides along so the itinerary prints the city's number while the
+        // routing keeps matching on the key (see the pipeline's LBL map)
+        const rec = { line: p.line, lbl: p.lbl, mode: p.mode, color: p.color, headsign: p.headsign, coords, pos: new Map() };
         for (const g of groups.values()) {
           if (!g.lines.has(p.line)) continue;
           const pr = project(pm, cum, g.cm);
@@ -1791,7 +1846,7 @@ async function init() {
           west = Math.min(west, c[0]); east = Math.max(east, c[0]);
           south = Math.min(south, c[1]); north = Math.max(north, c[1]);
         }
-        feats.push({ type: 'Feature', properties: { kind: 'leg', color: leg.color, line: leg.line }, geometry: { type: 'LineString', coordinates: line } });
+        feats.push({ type: 'Feature', properties: { kind: 'leg', color: leg.color, line: leg.rec.lbl ?? leg.line }, geometry: { type: 'LineString', coordinates: line } });
         // intermediate stops of the ride (strictly between boarding and alighting)
         for (const [name, pr] of leg.rec.pos) {
           if (pr.at > leg.a.at + 1 && pr.at < leg.b.at - 1) {

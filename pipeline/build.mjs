@@ -38,6 +38,12 @@ const TROLLEY_DARK = '#0a5121';
 // formal buses; rides in the same props the GZM metrolines used (mline/mstop/…)
 const MLINE_YELLOW = '#e8a000';
 const MLINE_DARK = '#7d5600';
+// Display labels for line keys that carry a pipeline-only disambiguator.
+// The KEY has to stay unique — it drives route merging, colour lookup and
+// selection — but the map must print what the city prints: Cairo signs and
+// the Egypt Transport app use bare numbers, with no agency prefix or suffix.
+// Filled during re-keying, applied to the display strings just before writing.
+const LBL = new Map();
 
 const t0 = Date.now();
 const log = (m) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}`);
@@ -192,11 +198,22 @@ async function processMode(cfg) {
       if (PARA[ag]) {
         const [prefix, width] = PARA[ag];
         seq[ag] = (seq[ag] || 0) + 1;
-        key = prefix + String(seq[ag]).padStart(width, '0');
+        const num = String(seq[ag]).padStart(width, '0');
+        key = prefix + num;
         cfg.mlineSet.add(key);
+        // The 14-seater microbuses carry no number at all — all 511 routes are
+        // named just "Microbus" in the feed, so the X code is ours end to end.
+        // The badge drops the X: amber is what says "microbus" on the map.
+        if (ag === 'P_O_14') LBL.set(key, num);
       } else if (ag === 'CTA') key = sn.replace(/^CTA\s*/, '');
-      else if (ag === 'CTA_M') key = sn.replace(/^Minibus\s*/, '') + 'm';
-      else if (ag === 'MM') key = sn.replace(/^MM\s*/, '');
+      else if (ag === 'CTA_M') {
+        // "Minibus 112" → key "112m", label "112". The m only keeps the key
+        // apart from CTA's own 112 (13 such collisions); on the street both
+        // are signed as plain 112 and the rider tells them apart by vehicle.
+        const num = sn.replace(/^Minibus\s*/, '');
+        key = num + 'm';
+        LBL.set(key, num);
+      } else if (ag === 'MM') key = sn.replace(/^MM\s*/, '');
       else if (ag === 'GRN') key = sn.replace(/^Green\s*/, '');
       else key = sn.replace(/^Minibus\s*/, '');
       r.route_short_name = key;
@@ -1280,6 +1297,25 @@ for (const f of routeFeatures) for (const [lon, lat] of f.geometry.coordinates) 
   if (lat < bLatMin) bLatMin = lat; if (lat > bLatMax) bLatMax = lat;
 }
 
+// ---------- display labels ----------
+// Everything above this point works on line KEYS. Here the strings the map
+// PRINTS are rewritten to the city's own numbering (see LBL). `arr` is left
+// alone — it is what selection, journeys and colour lookup match on — and the
+// badge boxes get a separate `lbl`, because their `line` prop is both the
+// text and the selection key. Relabelled numbers are never longer than the
+// keys they replace, so the pipeline's collision layout stays valid.
+const relabel = (s) => s.split(', ').map((k) => LBL.get(k) ?? k).join(', ');
+for (const features of [routeFeatures, streetFeatures, labelFeatures, stopFeatures, badgeFeatures]) {
+  for (const f of features) {
+    const p = f.properties;
+    for (const k of ['lines', 'busLines', 'mLines', 'nmLines']) {
+      if (typeof p[k] === 'string' && p[k]) p[k] = relabel(p[k]);
+    }
+    if (typeof p.line === 'string' && LBL.has(p.line)) p.lbl = LBL.get(p.line);
+  }
+}
+log(`Display labels: ${LBL.size} keys print without their pipeline prefix/suffix`);
+
 const outDir = join(ROOT, 'data/out');
 mkdirSync(outDir, { recursive: true });
 const fc = (features) => JSON.stringify({ type: 'FeatureCollection', features });
@@ -1295,6 +1331,8 @@ writeFileSync(join(outDir, 'meta.json'), JSON.stringify({
   bbox: [bLonMin, bLatMin, bLonMax, bLatMax],
   badgeBands: BADGE_BANDS,
   modes: MODES.map((m) => ({ mode: m.mode, label: m.label, color: m.color })),
-  lines: metaLines,
+  // the chips keep `line` as their value (selection matches keys) and print
+  // `label` where the city's number differs from the pipeline's key
+  lines: metaLines.map((l) => (LBL.has(l.line) ? { ...l, label: LBL.get(l.line) } : l)),
 }, null, 2));
 log(`Wrote data/out/{route,streets,labels,street-names,stops,badges,gtfs-shape}.geojson + meta.json`);
