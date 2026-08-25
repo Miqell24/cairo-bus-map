@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Greater Cairo Public Transport — interactive map</title>
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
-<link rel="stylesheet" href="style.css?v=20260825a">
+<link rel="stylesheet" href="style.css?v=20260825e-20260825a">
 </head>
 <body>
 <div id="map"></div>
@@ -86,10 +86,11 @@
   </div>
   <ul class="legend">
     <li><label><input type="checkbox" id="toggle-bus" checked> <span class="sw line"></span> Formal bus routes</label></li>
-    <li class="sublegend">CTA buses &amp; minibuses, Mwasalat Misr, Green Bus</li>
+    <li class="sublegend">CTA buses (<b>1</b>&ndash;<b>1093</b>, some with the Arabic letter they carry: <b>8s</b>, <b>24g</b>, <b>26t</b>) &middot; CTA minibuses, which use the SAME numbers as the buses &middot; Mwasalat Misr (<b>5</b>&ndash;<b>21</b>, <b>111</b>, <b>381</b>, <b>618</b>) &middot; Green Bus (<b>G1</b>, <b>G2</b>)</li>
 
     <li><label><input type="checkbox" id="toggle-mline" checked> <span class="sw line mline"></span> Paratransit routes</label></li>
-    <li class="sublegend"><span class="mini" style="background:#e8a000"></span>microbus · tomnaya · minibus · box; dashed = shared with formal buses</li>
+    <li class="sublegend"><span class="mini" style="background:#e8a000"></span>microbus <b>001</b>&ndash;<b>511</b> (14-seater, orange plates) &middot; tomnaya <b>512</b>&ndash;<b>581</b> (8-seater, blue plates) &middot; cooperative minibus <b>582</b>&ndash;<b>630</b> (29-seater, grey plates) &middot; box <b>631</b>&ndash;<b>639</b>; dashed = shared with formal buses</li>
+    <li class="sublegend">These services carry no number in the street at all &mdash; the three digits are this map&rsquo;s own, running in one series so each line can be told from the next. The amber is what says &ldquo;paratransit&rdquo;.</li>
     <li><label><input type="checkbox" id="toggle-tram" checked> <span class="sw line metro2"></span> Cairo Metro (M1 · M2)</label></li>
     <li><span class="sw stop"></span> Stop</li>
     <li><span class="sw terminus"></span> Terminus</li>
@@ -98,12 +99,12 @@
     <li class="numkey-head">Line numbers along the streets</li>
     <li><b class="num fm">505</b> Formal bus</li>
     <li><b class="num pt">505</b> Paratransit</li>
-    <li class="sublegend">Cairo signs both as bare numbers, so <b>505</b> can be a CTA bus <em>and</em> a microbus &mdash; colour is the only difference. A shared street prints both halves:</li>
+    <li class="sublegend">Every number here is printed the way Cairo signs it &mdash; bare, with no agency prefix or suffix &mdash; so <b>505</b> can be a CTA bus <em>and</em> a paratransit line: colour is the only difference. A shared street prints both halves, navy first:</li>
     <li class="numrow"><b class="num fm">1, 354,</b><b class="num pt">078, 169, 480</b></li>
   </ul>
   <details class="lines">
     <summary>All lines <span id="count"></span></summary>
-    <p class="hint">Click a line to show its route and stops. Paratransit carries no public line numbers — the codes below are assigned by this map: microbus <b>001</b>–<b>511</b>, tomnaya <b>T…</b>, cooperative <b>C…</b>, box <b>B…</b>.</p>
+    <p class="hint">Click a line to show its route and stops. The list is grouped by operator, because the printed numbers no longer say who runs a line: CTA&rsquo;s <b>7</b> and the CTA minibus <b>7</b> are both signed <b>7</b> in the street, and Mwasalat Misr&rsquo;s M-lines are signed as bare numbers too. Paratransit carries no public numbers at all — <b>001</b>–<b>639</b> is this map&rsquo;s own series (microbus, then tomnaya, cooperative minibus, box).</p>
     <div id="chips"></div>
   </details>
   <div class="labelsize" title="Scales the transit content — line numbers, stop names and terminus badges — at any zoom. The PNG exports use the sizes you pick here.">
@@ -139,6 +140,6 @@
   <label class="debug"><input type="checkbox" id="toggle-shape"> show raw GTFS shapes (QA)</label>
 </aside>
 <script src="vendor/maplibre-gl.js"></script>
-<script src="app.js?v=20260825a"></script>
+<script src="app.js?v=20260825e-20260825a"></script>
 </body>
 </html>

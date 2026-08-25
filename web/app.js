@@ -208,45 +208,52 @@ async function init() {
   const nM = meta.lines.filter((l) => l.mode === 'bus' && l.color === MLINE_YELLOW).length;
   document.getElementById('count').textContent = `(${nBus - nM} formal bus · ${nM} paratransit · ${nTram} metro)`;
   document.getElementById('stamp').textContent = new Date(meta.generatedAt).toLocaleDateString('en-GB');
-  // The list is grouped by operator class, because the numbers alone no longer
-  // say which is which: microbus codes print as bare digits (the X is a
-  // pipeline key, never a street sign), so "505" exists both as a CTA bus and
-  // as a microbus. Colour separates them on the map, the headings here.
-  // Class comes from the COLOUR first — formal Mwasalat Misr codes like "M10"
-  // or Green Bus "G1" would false-match a prefix test — and only then from the
-  // key's prefix, which is what the pipeline assigned per paratransit agency.
-  const PARA_GROUPS = [
-    ['X', 'Microbus', '14-seater, orange plates'],
-    ['T', 'Tomnaya', '8-seater Suzuki/Chevrolet, blue plates'],
-    ['C', 'Cooperative minibus', '29-seater, grey plates'],
-    ['B', 'Box', 'box paratransit'],
-    ['P', 'Peugeot', 'shared Peugeot'],
+  // The list is grouped BY OPERATOR (meta carries `op`, the feed's agency_id),
+  // because once the labels drop the pipeline prefixes the number alone stops
+  // identifying a line: CTA's 7 and CTA_M's 7 both print as "7", and a microbus
+  // "505" looks like CTA's 505. Guessing the operator from the number would be
+  // wrong anyway — Mwasalat Misr runs a plain "618". Colour separates formal
+  // from paratransit on the map; these headings separate them in the list.
+  const OP_GROUPS = [
+    ['CTA', 'CTA buses', 'Cairo Transport Authority — 1–1093, some with their Arabic letter (8s, 24g, 26t)'],
+    ['CTA_M', 'CTA minibuses', 'licensed by CTA — the SAME numbers as the buses; the vehicle is the difference'],
+    ['MM', 'Mwasalat Misr', 'signed as bare numbers in the street: 5–21, 111, 381, 618'],
+    ['GRN', 'Green Bus', ''],
+    ['LTRA_M', 'LTRA minibus', ''],
+    ['P_O_14', 'Microbus', '14-seater, orange plates — 001–511'],
+    ['P_B_8', 'Tomnaya', '8-seater Suzuki/Chevrolet, blue plates — 512–581'],
+    ['COOP', 'Cooperative minibus', '29-seater, grey plates — 582–630'],
+    ['BOX', 'Box', 'box paratransit — 631–639'],
+    ['PGT', 'Peugeot', 'shared Peugeot'],
   ];
-  const classOf = (l) => {
-    if (l.mode === 'tram') return 'metro';
-    if (l.color !== MLINE_YELLOW) return 'formal';
-    return PARA_GROUPS.some(([p]) => l.line.startsWith(p)) ? l.line[0] : 'para';
-  };
   const bucket = new Map();
   for (const l of meta.lines) {
-    const k = classOf(l);
+    const k = l.mode === 'tram' ? 'metro' : (l.op || 'other');
     if (!bucket.has(k)) bucket.set(k, []);
     bucket.get(k).push(l);
   }
-  const chipHtml = (l) =>
-    `<button class="chip" data-line="${esc(l.line)}" style="background:${esc(l.color)}">${esc(l.label ?? l.line)}</button>`;
+  // Two chips in a group can now read the same — Mwasalat Misr's M5 and NS5
+  // are both signed "5" — so the chip carries its line's terminals as a
+  // tooltip. The data-line key stays the pipeline's, which is what selection,
+  // colour and the route layers match on.
+  const chipHtml = (l) => {
+    const hs = (l.dirs || []).map((d) => d.headsign).filter(Boolean);
+    const tip = hs.length ? `${l.label && l.label !== l.line ? l.line + ' — ' : ''}${hs.join(' ↔ ')}` : '';
+    return `<button class="chip" data-line="${esc(l.line)}"${tip ? ` title="${esc(tip)}"` : ''} ` +
+           `style="background:${esc(l.color)}">${esc(l.label ?? l.line)}</button>`;
+  };
   const section = (key, title, note) => {
     const ls = bucket.get(key);
     if (!ls || !ls.length) return '';
+    bucket.delete(key);
     return `<h3 class="chip-head">${esc(title)} <span class="n">${ls.length}</span>` +
            (note ? `<span class="note">${esc(note)}</span>` : '') + `</h3>` +
            `<div class="chip-cloud">${ls.map(chipHtml).join(' ')}</div>`;
   };
-  document.getElementById('chips').innerHTML =
-    section('formal', 'Formal buses', 'CTA · Mwasalat Misr · Green Bus') +
-    PARA_GROUPS.map(([p, title, note]) => section(p, title, note)).join('') +
-    section('para', 'Other paratransit', '') +
-    section('metro', 'Cairo Metro', '');
+  // named groups first, then metro, then anything an updated feed adds
+  let html = OP_GROUPS.map(([k, t, n]) => section(k, t, n)).join('') + section('metro', 'Cairo Metro', '');
+  for (const k of [...bucket.keys()]) html += section(k, k, 'operator not in the legend yet');
+  document.getElementById('chips').innerHTML = html;
 
   // Line layers go below the base style labels (street names stay readable).
   const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;

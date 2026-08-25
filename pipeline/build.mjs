@@ -44,6 +44,11 @@ const MLINE_DARK = '#7d5600';
 // the Egypt Transport app use bare numbers, with no agency prefix or suffix.
 // Filled during re-keying, applied to the display strings just before writing.
 const LBL = new Map();
+// Line key → the agency that runs it. Once the labels drop the prefixes, the
+// key alone no longer says who operates a line (CTA's 7 and CTA_M's 7 both
+// print as "7"), so the panel groups the list by this instead of guessing
+// from the number — Mwasalat Misr's "618" looks exactly like a CTA number.
+const OP = new Map();
 
 const t0 = Date.now();
 const log = (m) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}`);
@@ -191,6 +196,20 @@ async function processMode(cfg) {
     cfg.trolleySet = new Set(); // no trolleybuses in Cairo
     const PARA = { P_O_14: ['X', 3], P_B_8: ['T', 2], COOP: ['C', 2], BOX: ['B', 2], PGT: ['P', 2] };
     const seq = {};
+    // The printed number of a paratransit line is one CONTINUOUS sequence
+    // across all four vehicle classes — microbus first, then tomnaya, the
+    // cooperative minibuses and the boxes. None of them carries a number in
+    // the street (the feed names all 511 microbus routes just "Microbus"), so
+    // the digits are ours either way; running them in one series is what keeps
+    // every printed label unique once the class letters are gone. The letters
+    // survive as the internal KEY, which is what selection and colour match on.
+    const PARA_ORDER = ['P_O_14', 'P_B_8', 'COOP', 'BOX', 'PGT'];
+    const paraBase = {};
+    { let n = 0;
+      for (const ag of PARA_ORDER) {
+        paraBase[ag] = n;
+        n += routes.filter((r) => r.agency_id === ag).length;
+      } }
     cfg.mlineSet = new Set();
     for (const r of [...routes].sort((a, b) => a.route_id.localeCompare(b.route_id))) {
       const ag = r.agency_id, sn = r.route_short_name;
@@ -201,10 +220,9 @@ async function processMode(cfg) {
         const num = String(seq[ag]).padStart(width, '0');
         key = prefix + num;
         cfg.mlineSet.add(key);
-        // The 14-seater microbuses carry no number at all — all 511 routes are
-        // named just "Microbus" in the feed, so the X code is ours end to end.
-        // The badge drops the X: amber is what says "microbus" on the map.
-        if (ag === 'P_O_14') LBL.set(key, num);
+        // The badge drops the class letter: amber is what says "paratransit"
+        // on the map, and the letter was never anything a rider could see.
+        LBL.set(key, String(paraBase[ag] + seq[ag]).padStart(3, '0'));
       } else if (ag === 'CTA') key = sn.replace(/^CTA\s*/, '');
       else if (ag === 'CTA_M') {
         // "Minibus 112" → key "112m", label "112". The m only keeps the key
@@ -213,10 +231,23 @@ async function processMode(cfg) {
         const num = sn.replace(/^Minibus\s*/, '');
         key = num + 'm';
         LBL.set(key, num);
-      } else if (ag === 'MM') key = sn.replace(/^MM\s*/, '');
-      else if (ag === 'GRN') key = sn.replace(/^Green\s*/, '');
-      else key = sn.replace(/^Minibus\s*/, '');
+      } else if (ag === 'MM') {
+        // "MM M10" → key "M10", label "10". Mwasalat Misr's own codes group its
+        // lines by area (M… across Greater Cairo, NA… inside 10th of Ramadan,
+        // NS… around Al Shorouq), but the street signs and the Egypt Transport
+        // app show the bare number, so that is what the map prints.
+        key = sn.replace(/^MM\s*/, '');
+        const num = key.replace(/^[A-Za-z]+/, '');
+        if (num && num !== key) LBL.set(key, num);
+      } else if (ag === 'GRN') key = sn.replace(/^Green\s*/, '');
+      else {
+        // the single LTRA-licensed minibus, "Minibus Ms4" → key "Ms4", label "4"
+        key = sn.replace(/^Minibus\s*/, '');
+        const num = key.replace(/^[A-Za-z]+/, '');
+        if (num && num !== key) LBL.set(key, num);
+      }
       r.route_short_name = key;
+      OP.set(key, ag);
     }
     cfg.lineColors = {}; cfg.lineColorsDark = {};
     for (const L of cfg.mlineSet) { cfg.lineColors[L] = MLINE_YELLOW; cfg.lineColorsDark[L] = MLINE_DARK; }
@@ -759,6 +790,7 @@ async function processMode(cfg) {
     line: L,
     mode: cfg.mode,
     color: colorOf([L]),
+    ...(OP.has(L) ? { op: OP.get(L) } : {}),
     dirs: reps.filter((r) => r.line === L).map((r) => ({
       dir: r.dir, headsign: r.headsign, variants: r.variants, tripCount: r.tripCount,
       stops: r.stopSeq.length, lengthKm: Math.round(r.lengthKm * 100) / 100, stats: r.stats,
@@ -1304,7 +1336,20 @@ for (const f of routeFeatures) for (const [lon, lat] of f.geometry.coordinates) 
 // badge boxes get a separate `lbl`, because their `line` prop is both the
 // text and the selection key. Relabelled numbers are never longer than the
 // keys they replace, so the pipeline's collision layout stays valid.
-const relabel = (s) => s.split(', ').map((k) => LBL.get(k) ?? k).join(', ');
+// Stripping the letters makes twins visible: CTA's 7 and the CTA-licensed
+// minibus 7 both print "7" (113 roadways carry both), and Mwasalat Misr's M5
+// and NS5 both print "5" (22 roadways). On the street they ARE the same
+// number — the rider tells them apart by the vehicle, not by the sign — so a
+// row prints it once. Each colour group is deduplicated on its own, so a navy
+// 7 and an amber 7 still both appear: there the colour is the difference.
+const relabel = (s) => {
+  const out = [];
+  for (const k of s.split(', ')) {
+    const v = LBL.get(k) ?? k;
+    if (!out.includes(v)) out.push(v);
+  }
+  return out.join(', ');
+};
 for (const features of [routeFeatures, streetFeatures, labelFeatures, stopFeatures, badgeFeatures]) {
   for (const f of features) {
     const p = f.properties;
