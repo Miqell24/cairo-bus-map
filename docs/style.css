@@ -408,3 +408,9 @@ details.journey .beta {
 }
 .city-switch nav .city-filter:focus { outline: none; border-color: var(--kmk); box-shadow: 0 0 0 2px rgba(0, 89, 169, 0.2); }
 @media (pointer: coarse) { .city-switch nav .city-filter { font-size: 16px; } }
+
+/* one operator, three area codes that all print the bare number */
+.chip-sub {
+  margin: 7px 0 2px; font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: #7b828c;
+}

@@ -242,13 +242,27 @@ async function init() {
     return `<button class="chip" data-line="${esc(l.line)}"${tip ? ` title="${esc(tip)}"` : ''} ` +
            `style="background:${esc(l.color)}">${esc(l.label ?? l.line)}</button>`;
   };
+  // Mwasalat Misr codes its lines by AREA — M… across Greater Cairo, NA… inside
+  // 10th of Ramadan, NS… around Al Shorouq — and all three print the bare
+  // number the flag shows, so its section listed "5 … 13 15 18 5 7 9" with two
+  // fives in it. The key still carries the letters, so the section splits on
+  // them here; no other operator needs this.
+  const MM_AREAS = [['M', 'Greater Cairo'], ['NA', '10th of Ramadan'], ['NS', 'Al Shorouq']];
+  const areaOf = (l) => (/^[A-Za-z]+/.exec(l.line) || [''])[0];
+  const cloud = (ls) => `<div class="chip-cloud">${ls.map(chipHtml).join(' ')}</div>`;
   const section = (key, title, note) => {
     const ls = bucket.get(key);
     if (!ls || !ls.length) return '';
     bucket.delete(key);
-    return `<h3 class="chip-head">${esc(title)} <span class="n">${ls.length}</span>` +
-           (note ? `<span class="note">${esc(note)}</span>` : '') + `</h3>` +
-           `<div class="chip-cloud">${ls.map(chipHtml).join(' ')}</div>`;
+    const head = `<h3 class="chip-head">${esc(title)} <span class="n">${ls.length}</span>` +
+           (note ? `<span class="note">${esc(note)}</span>` : '') + `</h3>`;
+    if (key !== 'MM') return head + cloud(ls);
+    const groups = MM_AREAS.map(([p, name]) => [name, ls.filter((l) => areaOf(l) === p)])
+      .filter(([, g]) => g.length);
+    const rest = ls.filter((l) => !MM_AREAS.some(([p]) => areaOf(l) === p));
+    if (rest.length) groups.unshift(['', rest]);
+    return head + groups.map(([name, g]) =>
+      (name ? `<h4 class="chip-sub">${esc(name)}</h4>` : '') + cloud(g)).join('');
   };
   // named groups first, then metro, then anything an updated feed adds
   let html = OP_GROUPS.map(([k, t, n]) => section(k, t, n)).join('') + section('metro', 'Cairo Metro', '');
