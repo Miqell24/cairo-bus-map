@@ -70,7 +70,7 @@
         },
         {
           "dir": "1",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 22,
@@ -11890,7 +11890,7 @@
         },
         {
           "dir": "1",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 47,
@@ -12869,7 +12869,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "Can Can 12th District  (6th of October)",
+          "headsign": "Can Can 12th District (6th of October)",
           "variants": 1,
           "tripCount": 1,
           "stops": 49,
@@ -12940,7 +12940,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Can Can 12th District  (6th of October)",
+          "headsign": "Can Can 12th District (6th of October)",
           "variants": 1,
           "tripCount": 1,
           "stops": 54,
@@ -13719,7 +13719,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 58,
@@ -14569,7 +14569,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "Madinat Al Solb  (Al Tibeen)",
+          "headsign": "Madinat Al Solb (Al Tibeen)",
           "variants": 1,
           "tripCount": 1,
           "stops": 56,
@@ -15169,7 +15169,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 59,
@@ -15369,7 +15369,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 39,
@@ -16040,7 +16040,7 @@
         },
         {
           "dir": "1",
-          "headsign": "3rd Settlement  (New Cairo)",
+          "headsign": "3rd Settlement (New Cairo)",
           "variants": 1,
           "tripCount": 1,
           "stops": 42,
@@ -17094,7 +17094,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Total  (6th of October)",
+          "headsign": "Total (6th of October)",
           "variants": 1,
           "tripCount": 1,
           "stops": 7,
@@ -18339,7 +18339,7 @@
       "dirs": [
         {
           "dir": "1",
-          "headsign": "Al Shari' Al Gadeed  (Bahteem)",
+          "headsign": "Al Shari' Al Gadeed (Bahteem)",
           "variants": 1,
           "tripCount": 1,
           "stops": 22,
@@ -19402,7 +19402,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "Lotus  (5th Settlement)",
+          "headsign": "Lotus (5th Settlement)",
           "variants": 1,
           "tripCount": 1,
           "stops": 38,
@@ -19474,7 +19474,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Lotus  (5th Settlement)",
+          "headsign": "Lotus (5th Settlement)",
           "variants": 1,
           "tripCount": 1,
           "stops": 43,
@@ -19576,7 +19576,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Lotus  (5th Settlement)",
+          "headsign": "Lotus (5th Settlement)",
           "variants": 1,
           "tripCount": 1,
           "stops": 47,
@@ -19627,7 +19627,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Lotus  (5th Settlement)",
+          "headsign": "Lotus (5th Settlement)",
           "variants": 1,
           "tripCount": 1,
           "stops": 26,
@@ -22411,7 +22411,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Traffic Department  (Kattameya)",
+          "headsign": "Traffic Department (Kattameya)",
           "variants": 1,
           "tripCount": 1,
           "stops": 15,
@@ -26425,7 +26425,7 @@
         },
         {
           "dir": "1",
-          "headsign": "Rawda Mosque  (Obour)",
+          "headsign": "Rawda Mosque (Obour)",
           "variants": 1,
           "tripCount": 1,
           "stops": 22,
@@ -29587,7 +29587,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "Rawda Mosque  (Obour)",
+          "headsign": "Rawda Mosque (Obour)",
           "variants": 1,
           "tripCount": 1,
           "stops": 18,
@@ -44128,7 +44128,7 @@
       "dirs": [
         {
           "dir": "0",
-          "headsign": "Al Shari' Al Gadeed  (Bahteem)",
+          "headsign": "Al Shari' Al Gadeed (Bahteem)",
           "variants": 1,
           "tripCount": 1,
           "stops": 9,

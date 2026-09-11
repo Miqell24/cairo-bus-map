@@ -237,7 +237,7 @@ async function init() {
   // tooltip. The data-line key stays the pipeline's, which is what selection,
   // colour and the route layers match on.
   const chipHtml = (l) => {
-    const hs = (l.dirs || []).map((d) => d.headsign).filter(Boolean);
+    const hs = [...new Set((l.dirs || []).map((d) => d.headsign).filter(Boolean))];
     const tip = hs.length ? `${l.label && l.label !== l.line ? l.line + ' — ' : ''}${hs.join(' ↔ ')}` : '';
     return `<button class="chip" data-line="${esc(l.line)}"${tip ? ` title="${esc(tip)}"` : ''} ` +
            `style="background:${esc(l.color)}">${esc(l.label ?? l.line)}</button>`;
