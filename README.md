@@ -7,12 +7,12 @@ and rail (own HMM/Viterbi map matching on an OSM graph), line numbers written
 parallel to every street they use, labeled stops, true roundabout arcs.
 
 Seventh city of the family, alongside
-[krakow-bus-map](https://github.com/Miqell24/krakow-bus-map),
-[poznan-bus-map](https://github.com/Miqell24/poznan-bus-map),
-[gzm-bus-map](https://github.com/Miqell24/gzm-bus-map),
-[trojmiasto-bus-map](https://github.com/Miqell24/trojmiasto-bus-map),
-[athens-bus-map](https://github.com/Miqell24/athens-bus-map) and
-[thessaloniki-bus-map](https://github.com/Miqell24/thessaloniki-bus-map) — same
+[krakow-bus-map](https://github.com/AGCGHub/krakow-bus-map),
+[poznan-bus-map](https://github.com/AGCGHub/poznan-bus-map),
+[gzm-bus-map](https://github.com/AGCGHub/gzm-bus-map),
+[trojmiasto-bus-map](https://github.com/AGCGHub/trojmiasto-bus-map),
+[athens-bus-map](https://github.com/AGCGHub/athens-bus-map) and
+[thessaloniki-bus-map](https://github.com/AGCGHub/thessaloniki-bus-map) — same
 pipeline and same visual system, different city and feeds. The most routes of
 the family, and the first with a mapped paratransit network.
 
@@ -77,4 +77,4 @@ node pipeline/serve.mjs 8133                          # http://localhost:8133
 
 ## Live
 
-**https://miqell24.github.io/cairo-bus-map/** — GitHub Pages from `main:/docs`.
+**https://agcghub.github.io/cairo-bus-map/** — GitHub Pages from `main:/docs`.
